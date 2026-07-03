@@ -1,0 +1,10 @@
+.vercel
+
+# Local-only files — not part of the published site
+Screenshot_1.png
+Screenshot_2.png
+viber_image_2026-07-03_15-00-53-089.jpg
+
+# OS / editor junk
+Thumbs.db
+.DS_Store
