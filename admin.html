@@ -1,0 +1,1156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LamAsia — Admin Dashboard</title>
+  <style>
+    :root {
+      --brand: #125f9f;
+      --brand-light: #1a76c0;
+      --brand-dark: #0d4a7a;
+      --accent: #1499cf;
+      --logo-blue: #125f9f;
+      --logo-cyan: #22b0e0;
+      --bg: #f0f2f5;
+      --card-bg: #ffffff;
+      --text: #1c2733;
+      --muted: #6b7787;
+      --border: #e1e5eb;
+      --radius: 12px;
+      --shadow-sm: 0 1px 3px rgba(31,58,95,.08);
+      --shadow-md: 0 4px 16px rgba(31,58,95,.1);
+      --shadow-lg: 0 10px 30px rgba(31,58,95,.15);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    /* ---------- Header ---------- */
+    header {
+      background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 50%, var(--accent) 100%);
+      color: #fff;
+      padding: 0 32px;
+      height: 64px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 12px rgba(18,95,159,.3);
+      position: relative;
+      z-index: 10;
+    }
+    header h1 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: .3px; }
+    header h1 span { font-weight: 400; opacity: .75; }
+    .header-right { display: flex; align-items: center; gap: 16px; }
+    .header-right span { font-size: 13px; opacity: .8; }
+    #btnLogout {
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.25);
+      color: #fff;
+      padding: 7px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background .15s;
+    }
+    #btnLogout:hover { background: rgba(255,255,255,.22); }
+
+    /* ---------- Login ---------- */
+    .login-wrap {
+      max-width: 400px;
+      margin: 100px auto;
+      padding: 0 24px;
+    }
+    .login-wrap .panel { box-shadow: var(--shadow-lg); border: none; }
+    .login-logo {
+      display: block;
+      height: 40px;
+      margin: 0 auto 20px;
+    }
+    .panel {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+    }
+    .panel h2 {
+      margin: 0 0 20px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      color: var(--muted);
+      text-align: center;
+    }
+    .field { margin-bottom: 18px; }
+    label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+    input[type=email], input[type=password] {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    input:focus { outline: none; border-color: var(--brand-light); box-shadow: 0 0 0 3px rgba(20,153,207,.15); }
+    button.btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      background: var(--brand);
+      color: #fff;
+      transition: background .15s, transform .1s;
+    }
+    button.btn:hover { background: var(--brand-light); }
+    button.btn:active { transform: scale(.98); }
+    button.btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+    .login-error {
+      display: none;
+      margin-top: 12px;
+      padding: 10px 14px;
+      background: #fdecea;
+      color: #b71c1c;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+
+    /* ---------- Dashboard ---------- */
+    .dashboard { display: none; max-width: 1200px; margin: 0 auto; padding: 28px 32px; }
+    .dashboard.show { display: block; }
+
+    /* Stats row */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 20px 22px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: box-shadow .15s, transform .15s, border-color .15s;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+    .stat-card.active { border-color: var(--brand); box-shadow: 0 0 0 2px rgba(18,95,159,.15), var(--shadow-md); }
+    .stat-card::after {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .stat-card.pending::after { background: #f59e0b; }
+    .stat-card.approved::after { background: #22c55e; }
+    .stat-card.rejected::after { background: #ef4444; }
+    .stat-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      color: var(--muted);
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .stat-number {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+    }
+    .stat-card.pending .stat-number { color: #d97706; }
+    .stat-card.approved .stat-number { color: #16a34a; }
+    .stat-card.rejected .stat-number { color: #dc2626; }
+
+    /* Table container */
+    .table-container {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .table-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .table-title span {
+      font-weight: 400;
+      color: var(--muted);
+      font-size: 13px;
+      margin-left: 6px;
+    }
+    .btn-refresh {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 500;
+      transition: background .15s;
+    }
+    .btn-refresh:hover { background: #e4e8ed; color: var(--text); }
+
+    .req-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .req-table th {
+      background: #f8f9fb;
+      text-align: left;
+      padding: 12px 18px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      color: var(--muted);
+      font-weight: 700;
+      border-bottom: 1px solid var(--border);
+    }
+    .req-table td {
+      padding: 14px 18px;
+      font-size: 14px;
+      border-bottom: 1px solid #f2f4f6;
+      vertical-align: middle;
+    }
+    .req-table tbody tr { transition: background .1s; }
+    .req-table tbody tr:hover td { background: #f8fafc; }
+    .req-table tbody tr:last-child td { border-bottom: none; }
+
+    .ref-code {
+      font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
+      font-size: 13px;
+      background: #f0f2f5;
+      padding: 3px 8px;
+      border-radius: 5px;
+      font-weight: 600;
+      letter-spacing: .5px;
+      color: var(--brand);
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+    .status-badge.pending { background: #fef3c7; color: #92400e; }
+    .status-badge.approved { background: #dcfce7; color: #166534; }
+    .status-badge.rejected { background: #fee2e2; color: #991b1b; }
+
+    .action-btn {
+      padding: 6px 14px;
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+      margin-right: 6px;
+      transition: background .15s, transform .1s;
+    }
+    .action-btn:active { transform: scale(.95); }
+    .btn-approve { background: #dcfce7; color: #166534; }
+    .btn-approve:hover { background: #bbf7d0; }
+    .btn-reject { background: #fee2e2; color: #991b1b; }
+    .btn-reject:hover { background: #fecaca; }
+    .btn-view { background: #eff6ff; color: var(--brand); }
+    .btn-view:hover { background: #dbeafe; }
+
+    .empty-msg {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .empty-icon {
+      font-size: 40px;
+      display: block;
+      margin-bottom: 12px;
+      opacity: .5;
+    }
+
+    /* ---------- Card modal ---------- */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(18,30,50,.6);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-content {
+      background: var(--bg);
+      border-radius: 20px;
+      padding: 28px;
+      max-width: 720px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+      box-shadow: 0 24px 48px rgba(18,30,50,.25);
+      animation: modalIn .2s ease;
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(.95) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal-close {
+      position: absolute; top: 16px; right: 20px;
+      background: var(--card-bg); border: 1px solid var(--border);
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      font-size: 18px;
+      cursor: pointer; color: var(--muted); line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s;
+    }
+    .modal-close:hover { background: #f0f2f5; color: var(--text); }
+    .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+    .modal-actions button { flex: 1; }
+
+    /* Card inside modal */
+    #modalCard {
+      background: var(--card-bg);
+      width: 100%;
+      border-radius: 16px;
+      padding: 40px 44px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+    #modalCard::before {
+      content: "";
+      position: absolute; top: 0; left: 0; right: 0; height: 10px;
+      background: linear-gradient(90deg, var(--logo-blue), var(--logo-cyan));
+    }
+    .card-head { display: flex; justify-content: space-between; align-items: flex-start; }
+    .card-logo { height: 42px; width: auto; }
+    .card-badge {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+      color: var(--accent); font-weight: 700; border: 1px solid var(--accent);
+      padding: 4px 10px; border-radius: 20px;
+    }
+    .card-title { font-size: 30px; font-weight: 700; color: var(--text); margin: 26px 0 4px; }
+    .card-sub { color: var(--muted); font-size: 14px; }
+    .card-grid {
+      margin-top: auto;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 18px 24px;
+      padding-top: 22px;
+    }
+    .card-item .k {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+      color: var(--muted); margin-bottom: 3px;
+    }
+    .card-item .v { font-size: 17px; font-weight: 600; color: var(--text); }
+    .sig-display { height: 58px; position: relative; overflow: visible; }
+    .sig-display img {
+      position: absolute; left: -6px; bottom: -10px;
+      max-height: 80px; max-width: 230px;
+      transform: rotate(-3deg); transform-origin: left bottom;
+      pointer-events: none;
+    }
+    .sig-line { border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); padding-top: 3px; }
+
+    /* ---------- Approval modal ---------- */
+    .approve-modal-content {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 28px;
+      max-width: 480px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+      box-shadow: 0 24px 48px rgba(18,30,50,.25);
+      animation: modalIn .2s ease;
+    }
+    .approve-modal-content h3 {
+      margin: 0 0 20px;
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .approve-modal-content .field { margin-bottom: 18px; }
+    .approve-modal-content label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+    .approve-modal-content input[type=text] {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+    .approve-modal-content input[type=text]:focus { outline: none; border-color: var(--brand-light); box-shadow: 0 0 0 3px rgba(20,153,207,.15); }
+    .approve-sig-wrap { position: relative; }
+    .approve-sig-wrap canvas {
+      width: 100%;
+      height: 150px;
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      background: #fbfcfd;
+      touch-action: none;
+      cursor: crosshair;
+      display: block;
+    }
+    .approve-sig-hint {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted); font-size: 13px; pointer-events: none;
+    }
+    .approve-clear-sig {
+      background: none; border: none; color: var(--brand-light);
+      font-size: 12px; cursor: pointer; padding: 4px 0; margin-top: 4px;
+    }
+    .approve-actions { display: flex; gap: 10px; margin-top: 18px; }
+    .approve-actions button { flex: 1; }
+    .approve-error {
+      display: none;
+      margin-top: 10px;
+      padding: 10px;
+      background: #fdecea;
+      color: #b71c1c;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+
+    /* Approver row in card */
+    .card-approver {
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px dashed var(--border);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px 24px;
+    }
+    .card-approver .k {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+      color: var(--muted); margin-bottom: 3px;
+    }
+    .card-approver .v { font-size: 17px; font-weight: 600; color: var(--text); }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 768px) {
+      .stats-row { grid-template-columns: 1fr; }
+      .dashboard { padding: 16px; }
+      header { padding: 0 16px; }
+      .req-table th, .req-table td { padding: 10px 12px; font-size: 13px; }
+    }
+
+    /* ---------- Print ---------- */
+    @media print {
+      @page { size: landscape; margin: 14mm; }
+      html, body { background: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      header, .dashboard, .modal-close, .modal-actions { display: none !important; }
+      .modal-overlay { position: static; background: none; backdrop-filter: none; padding: 0; display: block !important; }
+      .modal-content { padding: 0; max-width: 100%; background: none; border-radius: 0; box-shadow: none; animation: none; }
+      #modalCard {
+        aspect-ratio: auto !important;
+        width: 100%; max-width: 100%;
+        margin: 0 auto;
+        box-shadow: none;
+        border: 1px solid var(--border);
+        padding: 34px 40px;
+        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+      }
+      #modalCard::before { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .card-title { margin-top: 20px; }
+      .card-grid { margin-top: 44px !important; row-gap: 30px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Login -->
+  <div id="loginView">
+    <header>
+      <h1>LamAsia <span>Admin</span></h1>
+    </header>
+    <div class="login-wrap">
+      <div class="panel">
+        <img class="login-logo" src="logo.png" alt="LamAsia" />
+        <h2>Admin Login</h2>
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="admin@example.com" />
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="Password" />
+        </div>
+        <button class="btn" id="btnLogin">Log In</button>
+        <div class="login-error" id="loginError"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dashboardView" style="display:none">
+    <header>
+      <h1>LamAsia <span>Admin Dashboard</span></h1>
+      <div class="header-right">
+        <span id="userEmail"></span>
+        <button id="btnLogout">Log out</button>
+      </div>
+    </header>
+    <div class="dashboard show">
+      <div class="stats-row" id="statsRow">
+        <div class="stat-card pending active" data-status="pending">
+          <div class="stat-label">Pending</div>
+          <div class="stat-number" id="countPending">0</div>
+        </div>
+        <div class="stat-card approved" data-status="approved">
+          <div class="stat-label">Approved</div>
+          <div class="stat-number" id="countApproved">0</div>
+        </div>
+        <div class="stat-card rejected" data-status="rejected">
+          <div class="stat-label">Rejected</div>
+          <div class="stat-number" id="countRejected">0</div>
+        </div>
+      </div>
+      <div class="table-container">
+        <div class="table-header">
+          <div class="table-title" id="tableTitle">Pending Requests <span id="tableCount"></span></div>
+          <button class="btn-refresh" id="btnRefresh">Refresh</button>
+        </div>
+        <div id="tableWrap"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card Modal -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal-content">
+      <button class="modal-close" id="modalClose">&times;</button>
+      <div id="modalCard">
+        <div class="card-head">
+          <img class="card-logo" src="logo.png" alt="LamAsia" />
+          <div class="card-badge">Visitor Invitation</div>
+        </div>
+        <div class="card-title">You're Invited</div>
+        <div class="card-sub">Please present this card on arrival at reception.</div>
+        <div class="card-grid">
+          <div class="card-item">
+            <div class="k">Supplier</div>
+            <div class="v" id="mSupplier">&mdash;</div>
+          </div>
+          <div class="card-item">
+            <div class="k">Appointment</div>
+            <div class="v" id="mDate">&mdash;</div>
+          </div>
+          <div class="card-item">
+            <div class="k">Contact Person</div>
+            <div class="v" id="mContact">&mdash;</div>
+          </div>
+          <div class="card-item sig-item">
+            <div class="k">Signature</div>
+            <div class="sig-display"><img id="mSig" alt="" /></div>
+            <div class="sig-line">Authorised signature</div>
+          </div>
+        </div>
+        <div class="card-approver" id="mApproverRow" style="display:none">
+          <div class="card-item">
+            <div class="k">Approved By</div>
+            <div class="v" id="mApprovedBy">&mdash;</div>
+          </div>
+          <div class="card-item sig-item">
+            <div class="k">Approver Signature</div>
+            <div class="sig-display"><img id="mApproverSig" alt="" /></div>
+            <div class="sig-line">Approver signature</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="btnModalPng">Download PNG</button>
+        <button class="btn" onclick="window.print()">Print / Save PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Approval Modal -->
+  <div class="modal-overlay" id="approveModal">
+    <div class="approve-modal-content">
+      <button class="modal-close" id="approveModalClose">&times;</button>
+      <h3>Approve Request</h3>
+      <div class="field">
+        <label for="approverName">Approved By</label>
+        <input type="text" id="approverName" placeholder="e.g. John Smith" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label>Your Signature</label>
+        <div class="approve-sig-wrap">
+          <canvas id="approverPad"></canvas>
+          <div class="approve-sig-hint" id="approverSigHint">Sign here with mouse or finger</div>
+        </div>
+        <button type="button" class="approve-clear-sig" id="approverClearSig">Clear signature</button>
+      </div>
+      <div class="approve-error" id="approveError"></div>
+      <div class="approve-actions">
+        <button class="btn btn-secondary" id="approveCancelBtn">Cancel</button>
+        <button class="btn" id="approveConfirmBtn">Confirm Approval</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="logo.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://wtadwkggfqhofcnvvrqc.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0YWR3a2dnZnFob2ZjbnZ2cnFjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMwNjc4MTQsImV4cCI6MjA5ODY0MzgxNH0.Rc6pIIY_X9I7-OIhx6G2A8pdg9px_CakduSfFmEVmxc';
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let currentTab = 'pending';
+    let allRequests = [];
+
+    // ---------- Auth ----------
+    const loginView = document.getElementById('loginView');
+    const dashView = document.getElementById('dashboardView');
+
+    async function init() {
+      const { data: { session } } = await sb.auth.getSession();
+      if (session) {
+        showDashboard(session.user);
+      }
+    }
+
+    const btnLogin = document.getElementById('btnLogin');
+    btnLogin.addEventListener('click', async () => {
+      const email = document.getElementById('email').value.trim();
+      const pw = document.getElementById('password').value;
+      const errEl = document.getElementById('loginError');
+      errEl.style.display = 'none';
+
+      if (!email || !pw) {
+        errEl.textContent = 'Please enter email and password.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      btnLogin.disabled = true;
+      btnLogin.textContent = 'Logging in...';
+
+      const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
+
+      btnLogin.disabled = false;
+      btnLogin.textContent = 'Log In';
+
+      if (error) {
+        errEl.textContent = error.message;
+        errEl.style.display = 'block';
+        return;
+      }
+      showDashboard(data.user);
+    });
+
+    // Allow Enter key to submit login
+    document.getElementById('password').addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('btnLogin').click();
+    });
+
+    document.getElementById('btnLogout').addEventListener('click', async () => {
+      await sb.auth.signOut();
+      loginView.style.display = '';
+      dashView.style.display = 'none';
+    });
+
+    async function showDashboard(user) {
+      loginView.style.display = 'none';
+      dashView.style.display = '';
+      document.getElementById('userEmail').textContent = user.email;
+      await loadRequests();
+    }
+
+    // ---------- Stat cards as navigation ----------
+    document.getElementById('statsRow').addEventListener('click', e => {
+      const card = e.target.closest('.stat-card');
+      if (!card) return;
+      document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      currentTab = card.dataset.status;
+      renderTable();
+    });
+
+    document.getElementById('btnRefresh').addEventListener('click', () => loadRequests());
+
+    // ---------- Data ----------
+    async function loadRequests() {
+      const { data, error } = await sb.from('requests').select('*').order('created_at', { ascending: false });
+      if (error) {
+        document.getElementById('tableWrap').innerHTML = '<div class="empty-msg">Error loading requests: ' + error.message + '</div>';
+        return;
+      }
+      allRequests = data || [];
+      updateCounts();
+      renderTable();
+    }
+
+    function updateCounts() {
+      document.getElementById('countPending').textContent = allRequests.filter(r => r.status === 'pending').length;
+      document.getElementById('countApproved').textContent = allRequests.filter(r => r.status === 'approved').length;
+      document.getElementById('countRejected').textContent = allRequests.filter(r => r.status === 'rejected').length;
+    }
+
+    function formatDate(iso) {
+      if (!iso) return '—';
+      const d = new Date(iso + 'T00:00:00');
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+    }
+
+    function formatTimestamp(ts) {
+      if (!ts) return '—';
+      const d = new Date(ts);
+      return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function renderTable() {
+      const filtered = allRequests.filter(r => r.status === currentTab);
+      const wrap = document.getElementById('tableWrap');
+      const titleLabel = currentTab.charAt(0).toUpperCase() + currentTab.slice(1);
+      document.getElementById('tableTitle').innerHTML = titleLabel + ' Requests <span>' + filtered.length + ' total</span>';
+
+      if (filtered.length === 0) {
+        const icons = { pending: '&#128203;', approved: '&#9989;', rejected: '&#10060;' };
+        wrap.innerHTML = '<div class="empty-msg"><span class="empty-icon">' + (icons[currentTab] || '') + '</span>No ' + currentTab + ' requests found.</div>';
+        return;
+      }
+
+      let html = '<table class="req-table"><thead><tr>' +
+        '<th>Ref</th><th>Supplier</th><th>Appointment</th><th>Contact</th><th>Submitted</th><th>Status</th><th>Actions</th>' +
+        '</tr></thead><tbody>';
+
+      filtered.forEach(r => {
+        const ref = r.id.split('-')[0].toUpperCase();
+        html += '<tr>' +
+          '<td><span class="ref-code">' + ref + '</span></td>' +
+          '<td><strong>' + esc(r.supplier_name) + '</strong></td>' +
+          '<td>' + r.day + ', ' + formatDate(r.appointment_date) + '</td>' +
+          '<td>' + esc(r.contact_person) + '</td>' +
+          '<td>' + formatTimestamp(r.created_at) + '</td>' +
+          '<td><span class="status-badge ' + r.status + '">' + r.status + '</span></td>' +
+          '<td>';
+
+        if (r.status === 'pending') {
+          html += '<button class="action-btn btn-approve" onclick="openApproveModal(\'' + r.id + '\')">Approve</button>';
+          html += '<button class="action-btn btn-reject" onclick="updateStatus(\'' + r.id + '\',\'rejected\')">Reject</button>';
+        }
+        html += '<button class="action-btn btn-view" onclick="viewCard(\'' + r.id + '\')">View Card</button>';
+        html += '</td></tr>';
+      });
+
+      html += '</tbody></table>';
+      wrap.innerHTML = html;
+    }
+
+    function esc(s) {
+      const d = document.createElement('div');
+      d.textContent = s || '';
+      return d.innerHTML;
+    }
+
+    // ---------- Actions ----------
+    async function updateStatus(id, status) {
+      const { error } = await sb.from('requests').update({ status, reviewed_at: new Date().toISOString() }).eq('id', id);
+      if (error) {
+        alert('Error: ' + error.message);
+        return;
+      }
+      await loadRequests();
+    }
+
+    let currentViewData = null;
+
+    function viewCard(id) {
+      const r = allRequests.find(x => x.id === id);
+      if (!r) return;
+      currentViewData = r;
+
+      document.getElementById('mSupplier').textContent = r.supplier_name || '—';
+      document.getElementById('mDate').textContent = r.day + ', ' + formatDate(r.appointment_date);
+      document.getElementById('mContact').textContent = r.contact_person || '—';
+      document.getElementById('mSig').src = r.signature_data || '';
+
+      // Show approver info if approved
+      const approverRow = document.getElementById('mApproverRow');
+      if (r.approved_by) {
+        document.getElementById('mApprovedBy').textContent = r.approved_by;
+        document.getElementById('mApproverSig').src = r.approver_signature || '';
+        approverRow.style.display = '';
+      } else {
+        approverRow.style.display = 'none';
+      }
+
+      document.getElementById('modal').classList.add('show');
+    }
+
+    document.getElementById('modalClose').addEventListener('click', () => {
+      document.getElementById('modal').classList.remove('show');
+    });
+    document.getElementById('modal').addEventListener('click', e => {
+      if (e.target === e.currentTarget) {
+        document.getElementById('modal').classList.remove('show');
+      }
+    });
+
+    // Logo is loaded from logo.js as the LOGO constant (base64 data URL)
+
+    // ---------- Download PNG ----------
+    document.getElementById('btnModalPng').addEventListener('click', downloadPng);
+
+    function downloadPng() {
+      if (!currentViewData) return;
+      const d = currentViewData;
+      const hasApprover = !!d.approved_by;
+
+      const scale = 2;
+      const W = 960, H = hasApprover ? 620 : 460;
+      const c = document.createElement('canvas');
+      c.width = W * scale; c.height = H * scale;
+      const g = c.getContext('2d');
+      g.scale(scale, scale);
+
+      g.fillStyle = '#ffffff';
+      g.fillRect(0, 0, W, H);
+      const grad = g.createLinearGradient(0, 0, W, 0);
+      grad.addColorStop(0, '#125f9f'); grad.addColorStop(1, '#22b0e0');
+      g.fillStyle = grad;
+      g.fillRect(0, 0, W, 14);
+
+      const PAD = 60;
+      const col1 = PAD, col2 = W / 2 + 20;
+      g.textBaseline = 'top';
+
+      function finishCard(logoEl) {
+        // --- Header section ---
+        if (logoEl) {
+          const logoH = 50, logoW = logoH * (logoEl.naturalWidth / logoEl.naturalHeight);
+          g.drawImage(logoEl, PAD, 36, logoW, logoH);
+        }
+
+        g.strokeStyle = '#1499cf'; g.fillStyle = '#1499cf';
+        g.font = '700 14px "Segoe UI", sans-serif';
+        const badge = 'VISITOR INVITATION';
+        const bw = g.measureText(badge).width + 28;
+        g.lineWidth = 1.5;
+        roundRect(g, W - PAD - bw, 40, bw, 30, 15); g.stroke();
+        g.fillText(badge, W - PAD - bw + 14, 48);
+
+        g.fillStyle = '#1c2733';
+        g.font = '700 38px "Segoe UI", sans-serif';
+        g.fillText("You're Invited", PAD, 100);
+        g.fillStyle = '#6b7787';
+        g.font = '400 16px "Segoe UI", sans-serif';
+        g.fillText('Please present this card on arrival at reception.', PAD, 148);
+
+        // --- Thin separator ---
+        g.strokeStyle = '#e1e5eb'; g.lineWidth = 1;
+        g.beginPath(); g.moveTo(PAD, 185); g.lineTo(W - PAD, 185); g.stroke();
+
+        // --- Details grid ---
+        const row1 = 205, row2 = 280;
+        drawLabel(g, 'SUPPLIER', d.supplier_name || '—', col1, row1);
+        drawLabel(g, 'APPOINTMENT', d.day + ', ' + formatDate(d.appointment_date), col2, row1);
+        drawLabel(g, 'CONTACT PERSON', d.contact_person || '—', col1, row2);
+
+        // Signature block
+        g.fillStyle = '#6b7787';
+        g.font = '700 12px "Segoe UI", sans-serif';
+        g.fillText('SIGNATURE', col2, row2);
+        const sigLineY = row2 + 80;
+        g.strokeStyle = '#d5dce4'; g.lineWidth = 1;
+        g.beginPath(); g.moveTo(col2, sigLineY); g.lineTo(col2 + 330, sigLineY); g.stroke();
+        g.fillStyle = '#6b7787'; g.font = '400 12px "Segoe UI", sans-serif';
+        g.fillText('Authorised signature', col2, sigLineY + 6);
+
+        // --- Approver section ---
+        function drawApproverAndDownload() {
+          if (hasApprover) {
+            const appY = 390;
+            // Dashed separator
+            g.setLineDash([5, 5]);
+            g.strokeStyle = '#c0c8d2'; g.lineWidth = 1;
+            g.beginPath(); g.moveTo(PAD, appY); g.lineTo(W - PAD, appY); g.stroke();
+            g.setLineDash([]);
+
+            // "Approved" accent bar
+            g.fillStyle = '#22c55e';
+            g.fillRect(PAD, appY + 18, 4, 40);
+
+            // Approved by name
+            g.fillStyle = '#6b7787';
+            g.font = '700 12px "Segoe UI", sans-serif';
+            g.fillText('APPROVED BY', PAD + 16, appY + 20);
+            g.fillStyle = '#1c2733';
+            g.font = '600 22px "Segoe UI", sans-serif';
+            g.fillText(d.approved_by || '—', PAD + 16, appY + 40);
+
+            // Approver signature
+            g.fillStyle = '#6b7787';
+            g.font = '700 12px "Segoe UI", sans-serif';
+            g.fillText('APPROVER SIGNATURE', col2, appY + 20);
+            const appSigLineY = appY + 90;
+            g.strokeStyle = '#d5dce4'; g.lineWidth = 1;
+            g.beginPath(); g.moveTo(col2, appSigLineY); g.lineTo(col2 + 330, appSigLineY); g.stroke();
+            g.fillStyle = '#6b7787'; g.font = '400 12px "Segoe UI", sans-serif';
+            g.fillText('Approver signature', col2, appSigLineY + 6);
+
+            if (d.approver_signature) {
+              const asImg = new Image();
+              asImg.onload = function() {
+                const maxW = 320, maxH = 70;
+                const s = Math.min(maxW / asImg.width, maxH / asImg.height);
+                const sw = asImg.width * s, sh = asImg.height * s;
+                g.save();
+                g.translate(col2 - 4, appSigLineY);
+                g.rotate(-3 * Math.PI / 180);
+                g.drawImage(asImg, 0, -sh, sw, sh);
+                g.restore();
+                doDownload(c, d.supplier_name);
+              };
+              asImg.src = d.approver_signature;
+            } else {
+              doDownload(c, d.supplier_name);
+            }
+          } else {
+            doDownload(c, d.supplier_name);
+          }
+        }
+
+        if (d.signature_data) {
+          const sigImg = new Image();
+          sigImg.onload = function() {
+            const maxW = 320, maxH = 65;
+            const s = Math.min(maxW / sigImg.width, maxH / sigImg.height);
+            const sw = sigImg.width * s, sh = sigImg.height * s;
+            g.save();
+            g.translate(col2 - 4, sigLineY);
+            g.rotate(-3 * Math.PI / 180);
+            g.drawImage(sigImg, 0, -sh, sw, sh);
+            g.restore();
+            drawApproverAndDownload();
+          };
+          sigImg.src = d.signature_data;
+        } else {
+          drawApproverAndDownload();
+        }
+      }
+
+      const li = new Image();
+      li.onload = function() { finishCard(li); };
+      li.onerror = function() { finishCard(null); };
+      li.src = LOGO;
+    }
+
+    function drawLabel(g, key, val, x, y) {
+      g.fillStyle = '#6b7787';
+      g.font = '700 12px "Segoe UI", sans-serif';
+      g.fillText(key, x, y);
+      g.fillStyle = '#1c2733';
+      g.font = '600 22px "Segoe UI", sans-serif';
+      g.fillText(val || '—', x, y + 22);
+    }
+
+    function roundRect(g, x, y, w, h, r) {
+      g.beginPath();
+      g.moveTo(x + r, y);
+      g.arcTo(x + w, y, x + w, y + h, r);
+      g.arcTo(x + w, y + h, x, y + h, r);
+      g.arcTo(x, y + h, x, y, r);
+      g.arcTo(x, y, x + w, y, r);
+      g.closePath();
+    }
+
+    function doDownload(canvas, name) {
+      const fname = (name || 'invitation').replace(/[^\w]+/g, '_');
+      const a = document.createElement('a');
+      a.download = 'invitation_' + fname + '.png';
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    }
+
+    // ---------- Approval Modal ----------
+    let pendingApproveId = null;
+    const approveModalEl = document.getElementById('approveModal');
+    const approverPad = document.getElementById('approverPad');
+    const approverCtx = approverPad.getContext('2d');
+    const approverSigHint = document.getElementById('approverSigHint');
+    let approverDrawing = false, approverHasInk = false;
+
+    function resizeApproverPad() {
+      const ratio = window.devicePixelRatio || 1;
+      const rect = approverPad.getBoundingClientRect();
+      const prev = approverHasInk ? approverPad.toDataURL() : null;
+      approverPad.width = rect.width * ratio;
+      approverPad.height = rect.height * ratio;
+      approverCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      approverCtx.lineWidth = 2; approverCtx.lineCap = 'round'; approverCtx.lineJoin = 'round';
+      approverCtx.strokeStyle = '#1c2733';
+      if (prev && approverHasInk) {
+        const img = new Image();
+        img.onload = () => approverCtx.drawImage(img, 0, 0, rect.width, rect.height);
+        img.src = prev;
+      }
+    }
+
+    function approverStart(e) {
+      approverDrawing = true;
+      approverHasInk = true;
+      approverSigHint.style.display = 'none';
+      const p = getApproverPos(e);
+      approverCtx.beginPath();
+      approverCtx.moveTo(p.x, p.y);
+      e.preventDefault();
+    }
+    function approverMove(e) {
+      if (!approverDrawing) return;
+      const p = getApproverPos(e);
+      approverCtx.lineTo(p.x, p.y);
+      approverCtx.stroke();
+      e.preventDefault();
+    }
+    function approverEnd() { approverDrawing = false; }
+    function getApproverPos(e) {
+      const rect = approverPad.getBoundingClientRect();
+      const t = e.touches ? e.touches[0] : e;
+      return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+    }
+
+    approverPad.addEventListener('mousedown', approverStart);
+    approverPad.addEventListener('mousemove', approverMove);
+    window.addEventListener('mouseup', approverEnd);
+    approverPad.addEventListener('touchstart', approverStart, { passive: false });
+    approverPad.addEventListener('touchmove', approverMove, { passive: false });
+    approverPad.addEventListener('touchend', approverEnd);
+
+    document.getElementById('approverClearSig').addEventListener('click', () => {
+      approverCtx.clearRect(0, 0, approverPad.width, approverPad.height);
+      approverHasInk = false;
+      approverSigHint.style.display = 'flex';
+    });
+
+    function getApproverTrimmedSig() {
+      const w = approverPad.width, h = approverPad.height;
+      if (!w || !h) return null;
+      const data = approverCtx.getImageData(0, 0, w, h).data;
+      let minX = w, minY = h, maxX = 0, maxY = 0, found = false;
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          if (data[(y * w + x) * 4 + 3] > 10) {
+            found = true;
+            if (x < minX) minX = x; if (x > maxX) maxX = x;
+            if (y < minY) minY = y; if (y > maxY) maxY = y;
+          }
+        }
+      }
+      if (!found) return null;
+      const m = 10;
+      minX = Math.max(0, minX - m); minY = Math.max(0, minY - m);
+      maxX = Math.min(w - 1, maxX + m); maxY = Math.min(h - 1, maxY + m);
+      const cw = maxX - minX + 1, ch = maxY - minY + 1;
+      const t = document.createElement('canvas');
+      t.width = cw; t.height = ch;
+      t.getContext('2d').drawImage(approverPad, minX, minY, cw, ch, 0, 0, cw, ch);
+      return t;
+    }
+
+    function openApproveModal(id) {
+      pendingApproveId = id;
+      document.getElementById('approverName').value = '';
+      approverCtx.clearRect(0, 0, approverPad.width, approverPad.height);
+      approverHasInk = false;
+      approverSigHint.style.display = 'flex';
+      document.getElementById('approveError').style.display = 'none';
+      approveModalEl.classList.add('show');
+      setTimeout(resizeApproverPad, 50);
+    }
+
+    document.getElementById('approveModalClose').addEventListener('click', () => {
+      approveModalEl.classList.remove('show');
+    });
+    document.getElementById('approveCancelBtn').addEventListener('click', () => {
+      approveModalEl.classList.remove('show');
+    });
+    approveModalEl.addEventListener('click', e => {
+      if (e.target === e.currentTarget) approveModalEl.classList.remove('show');
+    });
+
+    document.getElementById('approveConfirmBtn').addEventListener('click', async () => {
+      const name = document.getElementById('approverName').value.trim();
+      const errEl = document.getElementById('approveError');
+
+      if (!name) {
+        errEl.textContent = 'Please enter your name.';
+        errEl.style.display = 'block';
+        return;
+      }
+      if (!approverHasInk) {
+        errEl.textContent = 'Please provide your signature.';
+        errEl.style.display = 'block';
+        return;
+      }
+      errEl.style.display = 'none';
+
+      const trimmed = getApproverTrimmedSig();
+      const sigData = trimmed ? trimmed.toDataURL('image/png') : approverPad.toDataURL('image/png');
+
+      const confirmBtn = document.getElementById('approveConfirmBtn');
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = 'Approving...';
+
+      const { error } = await sb.from('requests').update({
+        status: 'approved',
+        reviewed_at: new Date().toISOString(),
+        approved_by: name,
+        approver_signature: sigData
+      }).eq('id', pendingApproveId);
+
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = 'Confirm Approval';
+
+      if (error) {
+        errEl.textContent = 'Error: ' + error.message;
+        errEl.style.display = 'block';
+        return;
+      }
+
+      approveModalEl.classList.remove('show');
+      await loadRequests();
+    });
+
+    // ---------- Init ----------
+    init();
+  </script>
+</body>
+</html>

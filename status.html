@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LamAsia — Check Request Status</title>
+  <style>
+    :root {
+      --brand: #125f9f;
+      --brand-light: #1a76c0;
+      --accent: #1499cf;
+      --logo-blue: #125f9f;
+      --logo-cyan: #22b0e0;
+      --bg: #eef1f5;
+      --card-bg: #ffffff;
+      --text: #1c2733;
+      --muted: #6b7787;
+      --border: #d5dce4;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    header {
+      background: var(--brand);
+      color: #fff;
+      padding: 20px 24px;
+    }
+    header h1 { margin: 0; font-size: 20px; font-weight: 600; }
+    header p { margin: 4px 0 0; font-size: 13px; opacity: .8; }
+
+    .container {
+      max-width: 640px;
+      margin: 28px auto;
+      padding: 0 24px;
+    }
+    .panel {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+    }
+    label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+    input[type=text] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+    input:focus { outline: 2px solid var(--brand-light); border-color: transparent; }
+    .actions { margin-top: 16px; }
+    button.btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      background: var(--brand);
+      color: #fff;
+    }
+    button.btn:hover { background: var(--brand-light); }
+    button.btn:disabled { opacity: .6; cursor: not-allowed; }
+
+    .result {
+      margin-top: 20px;
+      padding: 18px;
+      border-radius: var(--radius);
+      display: none;
+    }
+    .result.pending { background: #fff3e0; color: #e65100; display: block; }
+    .result.approved { background: #e8f5e9; color: #2e7d32; display: block; }
+    .result.rejected { background: #fdecea; color: #b71c1c; display: block; }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+    .status-badge.pending { background: #fff3e0; color: #e65100; }
+    .status-badge.approved { background: #e8f5e9; color: #2e7d32; }
+    .status-badge.rejected { background: #fdecea; color: #b71c1c; }
+
+    /* ---------- Invitation card (reused from index.html) ---------- */
+    #card {
+      background: var(--card-bg);
+      width: 100%;
+      max-width: 640px;
+      border-radius: 16px;
+      padding: 40px 44px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(31,58,95,.15);
+      border: 1px solid var(--border);
+      display: none;
+      flex-direction: column;
+      margin-top: 20px;
+    }
+    #card.show { display: flex; }
+    #card::before {
+      content: "";
+      position: absolute; top: 0; left: 0; right: 0; height: 10px;
+      background: linear-gradient(90deg, var(--logo-blue), var(--logo-cyan));
+    }
+    .card-head { display: flex; justify-content: space-between; align-items: flex-start; }
+    .card-logo { height: 42px; width: auto; }
+    .card-badge {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+      color: var(--accent); font-weight: 700; border: 1px solid var(--accent);
+      padding: 4px 10px; border-radius: 20px;
+    }
+    .card-title { font-size: 30px; font-weight: 700; color: var(--text); margin: 26px 0 4px; }
+    .card-sub { color: var(--muted); font-size: 14px; }
+    .card-grid {
+      margin-top: auto;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 18px 24px;
+      padding-top: 22px;
+    }
+    .card-item .k {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+      color: var(--muted); margin-bottom: 3px;
+    }
+    .card-item .v { font-size: 17px; font-weight: 600; color: var(--text); }
+    .sig-display { height: 58px; position: relative; overflow: visible; }
+    .sig-display img {
+      position: absolute; left: -6px; bottom: -10px;
+      max-height: 80px; max-width: 230px;
+      transform: rotate(-3deg); transform-origin: left bottom;
+      pointer-events: none;
+    }
+    .sig-line { border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); padding-top: 3px; }
+
+    .card-actions {
+      display: flex; gap: 10px; margin-top: 16px;
+    }
+    .card-actions button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-secondary { background: #fff; color: var(--brand); border: 1px solid var(--brand); }
+    .btn-secondary:hover { background: #f2f6fb; }
+
+    .card-approver {
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px dashed var(--border);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px 24px;
+    }
+    .card-approver .k {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+      color: var(--muted); margin-bottom: 3px;
+    }
+    .card-approver .v { font-size: 17px; font-weight: 600; color: var(--text); }
+
+    @media (max-width: 560px) {
+      #card { padding: 26px 22px; }
+      .card-title { font-size: 24px; }
+      .card-grid { gap: 14px 18px; }
+      .card-item .v { font-size: 15px; }
+    }
+    @media print {
+      @page { size: landscape; margin: 14mm; }
+      html, body { background: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      header, .panel, .result, .card-actions, .app-footer { display: none !important; }
+      .container { margin: 0; padding: 0; max-width: 100%; }
+      #card {
+        display: flex !important;
+        aspect-ratio: auto !important;
+        width: 100%; max-width: 100%;
+        margin: 0 auto;
+        box-shadow: none;
+        border: 1px solid var(--border);
+        padding: 34px 40px;
+        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+      }
+      #card::before { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .card-title { margin-top: 20px; }
+      .card-grid { margin-top: 44px !important; row-gap: 30px; }
+    }
+    .app-footer { text-align: center; color: var(--muted); font-size: 12px; padding: 20px; }
+    .app-footer a { color: var(--brand-light); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>LamAsia &mdash; Request Status</h1>
+    <p>Enter your reference number to check the status of your visit request.</p>
+  </header>
+
+  <div class="container">
+    <div class="panel">
+      <label for="refInput">Reference Number</label>
+      <input type="text" id="refInput" placeholder="e.g. A1B2C3D4 or paste the full link" autocomplete="off" />
+      <div class="actions">
+        <button type="button" class="btn" id="btnCheck">Check Status</button>
+      </div>
+    </div>
+
+    <div class="result" id="resultBox"></div>
+
+    <div id="card">
+      <div class="card-head">
+        <img class="card-logo" src="logo.png" alt="LamAsia" />
+        <div class="card-badge">Visitor Invitation</div>
+      </div>
+      <div class="card-title">You're Invited</div>
+      <div class="card-sub">Please present this card on arrival at reception.</div>
+      <div class="card-grid">
+        <div class="card-item">
+          <div class="k">Supplier</div>
+          <div class="v" id="cSupplier">&mdash;</div>
+        </div>
+        <div class="card-item">
+          <div class="k">Appointment</div>
+          <div class="v" id="cDate">&mdash;</div>
+        </div>
+        <div class="card-item">
+          <div class="k">Contact Person</div>
+          <div class="v" id="cContact">&mdash;</div>
+        </div>
+        <div class="card-item sig-item">
+          <div class="k">Signature</div>
+          <div class="sig-display"><img id="cSig" alt="" /></div>
+          <div class="sig-line">Authorised signature</div>
+        </div>
+      </div>
+      <div class="card-approver" id="cApproverRow" style="display:none">
+        <div class="card-item">
+          <div class="k">Approved By</div>
+          <div class="v" id="cApprovedBy">&mdash;</div>
+        </div>
+        <div class="card-item sig-item">
+          <div class="k">Approver Signature</div>
+          <div class="sig-display"><img id="cApproverSig" alt="" /></div>
+          <div class="sig-line">Approver signature</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-actions" id="cardActions" style="display:none">
+      <button class="btn btn-secondary" id="btnPng">Download PNG</button>
+      <button class="btn" onclick="window.print()">Print / Save PDF</button>
+    </div>
+  </div>
+
+  <div class="app-footer"><a href="index.html">Submit a new request</a></div>
+
+  <script src="logo.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://wtadwkggfqhofcnvvrqc.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0YWR3a2dnZnFob2ZjbnZ2cnFjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMwNjc4MTQsImV4cCI6MjA5ODY0MzgxNH0.Rc6pIIY_X9I7-OIhx6G2A8pdg9px_CakduSfFmEVmxc';
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const refInput = document.getElementById('refInput');
+    const resultBox = document.getElementById('resultBox');
+    const card = document.getElementById('card');
+    const cardActions = document.getElementById('cardActions');
+
+    // Auto-fill from URL param
+    const urlRef = new URLSearchParams(location.search).get('ref');
+    if (urlRef) {
+      refInput.value = urlRef;
+      checkStatus(urlRef);
+    }
+
+    document.getElementById('btnCheck').addEventListener('click', () => {
+      const raw = refInput.value.trim();
+      if (!raw) return;
+      // Accept full UUID or the short prefix — we search by prefix
+      checkStatus(raw);
+    });
+
+    async function checkStatus(ref) {
+      resultBox.className = 'result';
+      resultBox.style.display = 'none';
+      card.classList.remove('show');
+      cardActions.style.display = 'none';
+
+      // If it looks like a full UUID use exact match, otherwise prefix match
+      let query;
+      if (ref.length >= 36) {
+        query = sb.from('requests').select('*').eq('id', ref).single();
+      } else {
+        // Short ref — search by id prefix (case-insensitive)
+        query = sb.from('requests').select('*').ilike('id', ref.toLowerCase() + '%').limit(1).single();
+      }
+
+      const { data, error } = await query;
+
+      if (error || !data) {
+        resultBox.className = 'result rejected';
+        resultBox.innerHTML = '<strong>Not found.</strong> Please check your reference number and try again.';
+        return;
+      }
+
+      const status = data.status;
+      const shortRef = data.id.split('-')[0].toUpperCase();
+
+      if (status === 'pending') {
+        resultBox.className = 'result pending';
+        resultBox.innerHTML =
+          '<strong>Pending Review</strong><br>' +
+          'Your request (Ref: ' + shortRef + ') is waiting for admin approval. Please check back later.';
+      } else if (status === 'rejected') {
+        resultBox.className = 'result rejected';
+        resultBox.innerHTML =
+          '<strong>Not Approved</strong><br>' +
+          'Your request (Ref: ' + shortRef + ') was not approved. Please contact reception for assistance.';
+      } else if (status === 'approved') {
+        resultBox.className = 'result approved';
+        resultBox.innerHTML =
+          '<strong>Approved!</strong><br>' +
+          'Your visit request (Ref: ' + shortRef + ') has been approved. You may print your invitation card below.';
+        showCard(data);
+      }
+    }
+
+    function formatDate(iso) {
+      if (!iso) return '—';
+      const d = new Date(iso + 'T00:00:00');
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+    }
+
+    let currentData = null;
+
+    function showCard(data) {
+      currentData = data;
+      document.getElementById('cSupplier').textContent = data.supplier_name || '—';
+      document.getElementById('cDate').textContent = data.day + ', ' + formatDate(data.appointment_date);
+      document.getElementById('cContact').textContent = data.contact_person || '—';
+      document.getElementById('cSig').src = data.signature_data || '';
+
+      // Show approver info if present
+      const approverRow = document.getElementById('cApproverRow');
+      if (data.approved_by) {
+        document.getElementById('cApprovedBy').textContent = data.approved_by;
+        document.getElementById('cApproverSig').src = data.approver_signature || '';
+        approverRow.style.display = '';
+      } else {
+        approverRow.style.display = 'none';
+      }
+
+      card.classList.add('show');
+      cardActions.style.display = 'flex';
+    }
+
+    // Logo is loaded from logo.js as the LOGO constant (base64 data URL)
+
+    // ---------- Download PNG ----------
+    document.getElementById('btnPng').addEventListener('click', downloadPng);
+
+    function downloadPng() {
+      if (!currentData) return;
+      const hasApprover = !!currentData.approved_by;
+
+      const scale = 2;
+      const W = 960, H = hasApprover ? 620 : 460;
+      const c = document.createElement('canvas');
+      c.width = W * scale; c.height = H * scale;
+      const g = c.getContext('2d');
+      g.scale(scale, scale);
+
+      g.fillStyle = '#ffffff';
+      g.fillRect(0, 0, W, H);
+      const grad = g.createLinearGradient(0, 0, W, 0);
+      grad.addColorStop(0, '#125f9f'); grad.addColorStop(1, '#22b0e0');
+      g.fillStyle = grad;
+      g.fillRect(0, 0, W, 14);
+
+      const PAD = 60;
+      const col1 = PAD, col2 = W / 2 + 20;
+      g.textBaseline = 'top';
+
+      function finishCard(logoEl) {
+        // --- Header ---
+        if (logoEl) {
+          const logoH = 50, logoW = logoH * (logoEl.naturalWidth / logoEl.naturalHeight);
+          g.drawImage(logoEl, PAD, 36, logoW, logoH);
+        }
+
+        g.strokeStyle = '#1499cf'; g.fillStyle = '#1499cf';
+        g.font = '700 14px "Segoe UI", sans-serif';
+        const badge = 'VISITOR INVITATION';
+        const bw = g.measureText(badge).width + 28;
+        g.lineWidth = 1.5;
+        roundRect(g, W - PAD - bw, 40, bw, 30, 15); g.stroke();
+        g.fillText(badge, W - PAD - bw + 14, 48);
+
+        g.fillStyle = '#1c2733';
+        g.font = '700 38px "Segoe UI", sans-serif';
+        g.fillText("You're Invited", PAD, 100);
+        g.fillStyle = '#6b7787';
+        g.font = '400 16px "Segoe UI", sans-serif';
+        g.fillText('Please present this card on arrival at reception.', PAD, 148);
+
+        // --- Separator ---
+        g.strokeStyle = '#e1e5eb'; g.lineWidth = 1;
+        g.beginPath(); g.moveTo(PAD, 185); g.lineTo(W - PAD, 185); g.stroke();
+
+        // --- Details grid ---
+        const row1 = 205, row2 = 280;
+        drawItem(g, 'SUPPLIER', currentData.supplier_name || '—', col1, row1);
+        drawItem(g, 'APPOINTMENT', currentData.day + ', ' + formatDate(currentData.appointment_date), col2, row1);
+        drawItem(g, 'CONTACT PERSON', currentData.contact_person || '—', col1, row2);
+
+        g.fillStyle = '#6b7787';
+        g.font = '700 12px "Segoe UI", sans-serif';
+        g.fillText('SIGNATURE', col2, row2);
+        const sigLineY = row2 + 80;
+        g.strokeStyle = '#d5dce4'; g.lineWidth = 1;
+        g.beginPath(); g.moveTo(col2, sigLineY); g.lineTo(col2 + 330, sigLineY); g.stroke();
+        g.fillStyle = '#6b7787'; g.font = '400 12px "Segoe UI", sans-serif';
+        g.fillText('Authorised signature', col2, sigLineY + 6);
+
+        // --- Approver section ---
+        function drawApproverAndDownload() {
+          if (hasApprover) {
+            const appY = 390;
+            g.setLineDash([5, 5]);
+            g.strokeStyle = '#c0c8d2'; g.lineWidth = 1;
+            g.beginPath(); g.moveTo(PAD, appY); g.lineTo(W - PAD, appY); g.stroke();
+            g.setLineDash([]);
+
+            g.fillStyle = '#22c55e';
+            g.fillRect(PAD, appY + 18, 4, 40);
+
+            g.fillStyle = '#6b7787';
+            g.font = '700 12px "Segoe UI", sans-serif';
+            g.fillText('APPROVED BY', PAD + 16, appY + 20);
+            g.fillStyle = '#1c2733';
+            g.font = '600 22px "Segoe UI", sans-serif';
+            g.fillText(currentData.approved_by || '—', PAD + 16, appY + 40);
+
+            g.fillStyle = '#6b7787';
+            g.font = '700 12px "Segoe UI", sans-serif';
+            g.fillText('APPROVER SIGNATURE', col2, appY + 20);
+            const appSigLineY = appY + 90;
+            g.strokeStyle = '#d5dce4'; g.lineWidth = 1;
+            g.beginPath(); g.moveTo(col2, appSigLineY); g.lineTo(col2 + 330, appSigLineY); g.stroke();
+            g.fillStyle = '#6b7787'; g.font = '400 12px "Segoe UI", sans-serif';
+            g.fillText('Approver signature', col2, appSigLineY + 6);
+
+            if (currentData.approver_signature) {
+              const asImg = new Image();
+              asImg.onload = function() {
+                const maxW = 320, maxH = 70;
+                const s = Math.min(maxW / asImg.width, maxH / asImg.height);
+                const sw = asImg.width * s, sh = asImg.height * s;
+                g.save();
+                g.translate(col2 - 4, appSigLineY);
+                g.rotate(-3 * Math.PI / 180);
+                g.drawImage(asImg, 0, -sh, sw, sh);
+                g.restore();
+                triggerDownload(c);
+              };
+              asImg.src = currentData.approver_signature;
+            } else {
+              triggerDownload(c);
+            }
+          } else {
+            triggerDownload(c);
+          }
+        }
+
+        if (currentData.signature_data) {
+          const sigImg = new Image();
+          sigImg.onload = function() {
+            const maxW = 320, maxH = 65;
+            const s = Math.min(maxW / sigImg.width, maxH / sigImg.height);
+            const sw = sigImg.width * s, sh = sigImg.height * s;
+            g.save();
+            g.translate(col2 - 4, sigLineY);
+            g.rotate(-3 * Math.PI / 180);
+            g.drawImage(sigImg, 0, -sh, sw, sh);
+            g.restore();
+            drawApproverAndDownload();
+          };
+          sigImg.src = currentData.signature_data;
+        } else {
+          drawApproverAndDownload();
+        }
+      }
+
+      // Load logo then render
+      const li = new Image();
+      li.onload = function() { finishCard(li); };
+      li.onerror = function() { finishCard(null); };
+      li.src = LOGO;
+    }
+
+    function drawItem(g, key, val, x, y) {
+      g.fillStyle = '#6b7787';
+      g.font = '700 12px "Segoe UI", sans-serif';
+      g.fillText(key, x, y);
+      g.fillStyle = '#1c2733';
+      g.font = '600 22px "Segoe UI", sans-serif';
+      g.fillText(val || '—', x, y + 22);
+    }
+
+    function roundRect(g, x, y, w, h, r) {
+      g.beginPath();
+      g.moveTo(x + r, y);
+      g.arcTo(x + w, y, x + w, y + h, r);
+      g.arcTo(x + w, y + h, x, y + h, r);
+      g.arcTo(x, y + h, x, y, r);
+      g.arcTo(x, y, x + w, y, r);
+      g.closePath();
+    }
+
+    function triggerDownload(canvas) {
+      const name = (currentData.supplier_name || 'invitation').replace(/[^\w]+/g, '_');
+      const a = document.createElement('a');
+      a.download = 'invitation_' + name + '.png';
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    }
+  </script>
+</body>
+</html>
