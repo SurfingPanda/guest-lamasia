@@ -198,11 +198,28 @@
 
     /* ---------- Print ---------- */
     @media print {
-      body { background: #fff; }
+      @page { size: landscape; margin: 14mm; }
+      html, body {
+        background: #fff !important;
+        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+      }
       header, .form-col, .preview-label, .app-footer { display: none !important; }
-      .layout { display: block; margin: 0; padding: 0; }
+      .layout { display: block; margin: 0; padding: 0; gap: 0; }
       .preview-col { position: static; }
-      #card { box-shadow: none; border: none; max-width: 100%; margin: 0 auto; }
+      #card {
+        aspect-ratio: auto !important;   /* don't stretch to a fixed ratio */
+        width: 100%; max-width: 100%;
+        margin: 0 auto;
+        box-shadow: none;
+        border: 1px solid var(--border);
+        padding: 34px 40px;
+        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+      }
+      #card::before { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .card-title { margin-top: 20px; }
+      /* replace the "push to bottom" auto gap with even, aligned spacing */
+      .card-grid { margin-top: 44px !important; row-gap: 30px; }
+      .card-item .v { font-size: 17px; }
     }
     .app-footer { text-align: center; color: var(--muted); font-size: 12px; padding: 20px; }
   </style>
