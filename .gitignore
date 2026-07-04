@@ -1,9 +1,12 @@
+node_modules
+dist
 .vercel
+.claude
+.vscode
 
-# Local-only files — not part of the published site
-Screenshot_1.png
-Screenshot_2.png
-viber_image_2026-07-03_15-00-53-089.jpg
+# Local-only files
+Screenshot_*.png
+viber_image_*.jpg
 
 # OS / editor junk
 Thumbs.db

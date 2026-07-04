@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply w-full py-3 rounded-lg text-sm font-semibold bg-brand text-white transition-colors hover:bg-brand-light disabled:opacity-60 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply w-full py-3 rounded-lg text-sm font-semibold bg-white text-brand border border-brand transition-colors hover:bg-blue-50;
+  }
+  .input-field {
+    @apply w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm font-[inherit] transition-all focus:outline-none focus:border-brand-light focus:ring-2 focus:ring-accent/20;
+  }
+}
+
+/* Modal animation */
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Print styles */
+@media print {
+  @page { size: landscape; margin: 14mm; }
+  html, body {
+    background: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
