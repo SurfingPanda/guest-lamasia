@@ -10,6 +10,7 @@ export default function StatusCheck() {
   const [refInput, setRefInput] = useState('')
   const [result, setResult] = useState(null)
   const [cardData, setCardData] = useState(null)
+  const [checking, setChecking] = useState(false)
 
   useEffect(() => {
     const ref = searchParams.get('ref')
@@ -22,10 +23,13 @@ export default function StatusCheck() {
   const checkStatus = async (ref) => {
     setResult(null)
     setCardData(null)
+    setChecking(true)
 
     const { data, error } = await supabase
       .rpc('get_request_status', { p_ref: ref.trim() })
       .single()
+
+    setChecking(false)
 
     if (error || !data) {
       setResult({ status: 'not_found' })
@@ -73,8 +77,8 @@ export default function StatusCheck() {
             onKeyDown={(e) => e.key === 'Enter' && handleCheck()}
           />
           <div className="mt-4">
-            <button className="btn-primary" onClick={handleCheck}>
-              Check Status
+            <button className="btn-primary" onClick={handleCheck} disabled={checking}>
+              {checking ? 'Checking…' : 'Check Status'}
             </button>
           </div>
         </div>

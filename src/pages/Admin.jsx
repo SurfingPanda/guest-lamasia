@@ -81,6 +81,7 @@ function Dashboard({ session, onLogout }) {
   const [tab, setTab] = useState('pending')
   const [viewData, setViewData] = useState(null)
   const [approveId, setApproveId] = useState(null)
+  const [rejectTarget, setRejectTarget] = useState(null)
   const [search, setSearch] = useState('')
 
   const loadRequests = useCallback(async () => {
@@ -223,7 +224,7 @@ function Dashboard({ session, onLogout }) {
                           {r.status === 'pending' && (
                             <>
                               <ActionBtn color="green" onClick={() => setApproveId(r.id)}>Approve</ActionBtn>
-                              <ActionBtn color="red" onClick={() => updateStatus(r.id, 'rejected')}>Reject</ActionBtn>
+                              <ActionBtn color="red" onClick={() => setRejectTarget(r)}>Reject</ActionBtn>
                             </>
                           )}
                           <ActionBtn color="blue" onClick={() => setViewData(r)}>View Card</ActionBtn>
@@ -257,7 +258,50 @@ function Dashboard({ session, onLogout }) {
           onApproved={() => { setApproveId(null); loadRequests() }}
         />
       )}
+
+      {/* Reject Confirm Modal */}
+      {rejectTarget && (
+        <RejectConfirmModal
+          request={rejectTarget}
+          onClose={() => setRejectTarget(null)}
+          onConfirm={async () => {
+            await updateStatus(rejectTarget.id, 'rejected')
+            setRejectTarget(null)
+          }}
+        />
+      )}
     </div>
+  )
+}
+
+/* ─── Reject Confirm Modal ─── */
+function RejectConfirmModal({ request, onClose, onConfirm }) {
+  const [busy, setBusy] = useState(false)
+  const ref = request.id.split('-')[0].toUpperCase()
+
+  const handleConfirm = async () => {
+    setBusy(true)
+    await onConfirm()
+  }
+
+  return (
+    <Modal onClose={onClose} maxWidth="max-w-sm">
+      <h3 className="text-lg font-bold mb-3">Reject Request?</h3>
+      <p className="text-sm text-gray-600 mb-5">
+        Reject request <strong className="font-mono">{ref}</strong> from{' '}
+        <strong>{request.supplier_name}</strong>? You can approve it later if this was a mistake.
+      </p>
+      <div className="flex gap-2.5">
+        <button className="btn-secondary" onClick={onClose} disabled={busy}>Cancel</button>
+        <button
+          className="w-full py-3 rounded-lg text-sm font-semibold bg-red-600 text-white transition-colors hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
+          onClick={handleConfirm}
+          disabled={busy}
+        >
+          {busy ? 'Rejecting…' : 'Reject Request'}
+        </button>
+      </div>
+    </Modal>
   )
 }
 
