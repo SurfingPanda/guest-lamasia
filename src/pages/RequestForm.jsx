@@ -57,17 +57,13 @@ export default function RequestForm() {
     }
 
     setSubmitting(true)
-    const { data, error } = await supabase
-      .from('requests')
-      .insert({
-        supplier_name: supplier.trim(),
-        appointment_date: apptDate,
-        day,
-        contact_person: contact.trim(),
-        signature_data: signatureData,
-      })
-      .select('id')
-      .single()
+    const { data: newId, error } = await supabase.rpc('submit_request', {
+      p_supplier_name: supplier.trim(),
+      p_appointment_date: apptDate,
+      p_day: day,
+      p_contact_person: contact.trim(),
+      p_signature_data: signatureData,
+    })
 
     setSubmitting(false)
 
@@ -76,12 +72,12 @@ export default function RequestForm() {
       return
     }
 
-    const refId = data.id.split('-')[0].toUpperCase()
+    const refId = newId.split('-')[0].toUpperCase()
     setMessage({
       error: false,
       refId,
-      fullId: data.id,
-      linkTo: `/status?ref=${data.id}`,
+      fullId: newId,
+      linkTo: `/status?ref=${newId}`,
     })
 
     // Reset form
