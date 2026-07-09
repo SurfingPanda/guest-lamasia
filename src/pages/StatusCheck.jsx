@@ -23,14 +23,10 @@ export default function StatusCheck() {
     setResult(null)
     setCardData(null)
 
-    let query
-    if (ref.length >= 36) {
-      query = supabase.from('requests').select('*').eq('id', ref).single()
-    } else {
-      query = supabase.from('requests').select('*').ilike('id', ref.toLowerCase() + '%').limit(1).single()
-    }
+    const { data, error } = await supabase
+      .rpc('get_request_status', { p_ref: ref.trim() })
+      .single()
 
-    const { data, error } = await query
     if (error || !data) {
       setResult({ status: 'not_found' })
       return
