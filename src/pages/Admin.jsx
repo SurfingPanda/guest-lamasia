@@ -161,23 +161,23 @@ function Dashboard({ session, onLogout }) {
 
         {/* Table */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="flex justify-between items-center px-5 py-4 border-b border-gray-200 gap-3">
+          <div className="flex flex-wrap justify-between items-center px-5 py-4 border-b border-gray-200 gap-3">
             <div className="text-sm font-bold whitespace-nowrap">
               {tab.charAt(0).toUpperCase() + tab.slice(1)} Requests{' '}
               <span className="font-normal text-gray-500 text-xs ml-1.5">{filtered.length} total</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <input
                 type="text"
                 placeholder="Search ref, supplier, contact..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs w-56 focus:outline-none focus:border-brand-light focus:ring-2 focus:ring-accent/20"
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs flex-1 sm:w-56 sm:flex-none focus:outline-none focus:border-brand-light focus:ring-2 focus:ring-accent/20"
               />
               <button
                 onClick={loadRequests}
                 disabled={loading}
-                className="bg-gray-100 border border-gray-200 text-gray-500 px-3.5 py-1.5 rounded-lg text-xs cursor-pointer font-medium hover:bg-gray-200 hover:text-gray-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                className="bg-gray-100 border border-gray-200 text-gray-500 px-3.5 py-1.5 rounded-lg text-xs cursor-pointer font-medium hover:bg-gray-200 hover:text-gray-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
               >
                 {loading ? 'Refreshing…' : 'Refresh'}
               </button>
@@ -194,47 +194,78 @@ function Dashboard({ session, onLogout }) {
               No {tab} requests found.
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-gray-50">
-                    {['Ref', 'Supplier', 'Appointment', 'Contact', 'Submitted', 'Status', 'Actions'].map((h) => (
-                      <th key={h} className="text-left px-4 py-3 text-[11px] uppercase tracking-wider text-gray-500 font-bold border-b border-gray-200">
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((r) => {
-                    const ref = r.id.split('-')[0].toUpperCase()
-                    return (
-                      <tr key={r.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-3.5 text-sm border-b border-gray-100">
-                          <span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded font-semibold tracking-wide text-brand">{ref}</span>
-                        </td>
-                        <td className="px-4 py-3.5 text-sm border-b border-gray-100 font-semibold">{r.supplier_name}</td>
-                        <td className="px-4 py-3.5 text-sm border-b border-gray-100">{r.day}, {formatDate(r.appointment_date)}</td>
-                        <td className="px-4 py-3.5 text-sm border-b border-gray-100">{r.contact_person}</td>
-                        <td className="px-4 py-3.5 text-sm border-b border-gray-100">{formatTimestamp(r.created_at)}</td>
-                        <td className="px-4 py-3.5 text-sm border-b border-gray-100">
-                          <StatusBadge status={r.status} />
-                        </td>
-                        <td className="px-4 py-3.5 text-sm border-b border-gray-100">
-                          {r.status === 'pending' && (
-                            <>
-                              <ActionBtn color="green" onClick={() => setApproveId(r.id)}>Approve</ActionBtn>
-                              <ActionBtn color="red" onClick={() => setRejectTarget(r)}>Reject</ActionBtn>
-                            </>
-                          )}
-                          <ActionBtn color="blue" onClick={() => setViewData(r)}>View Card</ActionBtn>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <>
+              {/* Mobile: stacked cards */}
+              <div className="divide-y divide-gray-100 md:hidden">
+                {filtered.map((r) => {
+                  const ref = r.id.split('-')[0].toUpperCase()
+                  return (
+                    <div key={r.id} className="p-4">
+                      <div className="flex justify-between items-start gap-2 mb-2">
+                        <span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded font-semibold tracking-wide text-brand">{ref}</span>
+                        <StatusBadge status={r.status} />
+                      </div>
+                      <div className="font-semibold text-sm">{r.supplier_name}</div>
+                      <div className="text-xs text-gray-500 mt-0.5">{r.day}, {formatDate(r.appointment_date)}</div>
+                      <div className="text-xs text-gray-500">{r.contact_person}</div>
+                      <div className="text-xs text-gray-400 mt-1">Submitted {formatTimestamp(r.created_at)}</div>
+                      <div className="flex flex-wrap gap-1.5 mt-3">
+                        {r.status === 'pending' && (
+                          <>
+                            <ActionBtn color="green" onClick={() => setApproveId(r.id)}>Approve</ActionBtn>
+                            <ActionBtn color="red" onClick={() => setRejectTarget(r)}>Reject</ActionBtn>
+                          </>
+                        )}
+                        <ActionBtn color="blue" onClick={() => setViewData(r)}>View Card</ActionBtn>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Desktop: table */}
+              <div className="overflow-x-auto hidden md:block">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      {['Ref', 'Supplier', 'Appointment', 'Contact', 'Submitted', 'Status', 'Actions'].map((h) => (
+                        <th key={h} className="text-left px-4 py-3 text-[11px] uppercase tracking-wider text-gray-500 font-bold border-b border-gray-200">
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((r) => {
+                      const ref = r.id.split('-')[0].toUpperCase()
+                      return (
+                        <tr key={r.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-4 py-3.5 text-sm border-b border-gray-100">
+                            <span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded font-semibold tracking-wide text-brand">{ref}</span>
+                          </td>
+                          <td className="px-4 py-3.5 text-sm border-b border-gray-100 font-semibold">{r.supplier_name}</td>
+                          <td className="px-4 py-3.5 text-sm border-b border-gray-100">{r.day}, {formatDate(r.appointment_date)}</td>
+                          <td className="px-4 py-3.5 text-sm border-b border-gray-100">{r.contact_person}</td>
+                          <td className="px-4 py-3.5 text-sm border-b border-gray-100">{formatTimestamp(r.created_at)}</td>
+                          <td className="px-4 py-3.5 text-sm border-b border-gray-100">
+                            <StatusBadge status={r.status} />
+                          </td>
+                          <td className="px-4 py-3.5 text-sm border-b border-gray-100">
+                            {r.status === 'pending' && (
+                              <>
+                                <ActionBtn color="green" onClick={() => setApproveId(r.id)}>Approve</ActionBtn>
+                                <ActionBtn color="red" onClick={() => setRejectTarget(r)}>Reject</ActionBtn>
+                              </>
+                            )}
+                            <ActionBtn color="blue" onClick={() => setViewData(r)}>View Card</ActionBtn>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       </div>
