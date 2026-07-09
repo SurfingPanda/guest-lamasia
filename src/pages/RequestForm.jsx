@@ -1,19 +1,42 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { formatDate } from '../lib/utils'
 import SignaturePad from '../components/SignaturePad'
 import InvitationCard from '../components/InvitationCard'
+
+const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+function toISO(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
+}
+
+function dayNameFor(iso) {
+  return new Date(iso + 'T00:00:00').getDay() === 1 ? 'Monday' : 'Tuesday'
+}
+
+// Only Mondays and Tuesdays are valid appointment days
+function getUpcomingDates(count) {
+  const dates = []
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  for (let i = 0; dates.length < count && i < 60; i++) {
+    if (d.getDay() === 1 || d.getDay() === 2) dates.push(new Date(d))
+    d.setDate(d.getDate() + 1)
+  }
+  return dates
+}
 
 export default function RequestForm() {
   const [supplier, setSupplier] = useState('')
   const [contact, setContact] = useState('')
-  const [day, setDay] = useState('Monday')
   const [apptDate, setApptDate] = useState('')
   const [signatureData, setSignatureData] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState(null)
   const [copied, setCopied] = useState(false)
+
+  const upcomingDates = useMemo(() => getUpcomingDates(8), [])
 
   const copyRef = useCallback((refId) => {
     navigator.clipboard.writeText(refId)
@@ -21,30 +44,9 @@ export default function RequestForm() {
     setTimeout(() => setCopied(false), 2000)
   }, [])
 
-  // Restrict date picker to selected day
-  const targetDayNum = day === 'Monday' ? 1 : 2
-  const getMinDate = () => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    let diff = targetDayNum - today.getDay()
-    if (diff < 0) diff += 7
-    const next = new Date(today)
-    next.setDate(today.getDate() + diff)
-    return next.getFullYear() + '-' +
-      String(next.getMonth() + 1).padStart(2, '0') + '-' +
-      String(next.getDate()).padStart(2, '0')
-  }
-
-  useEffect(() => {
-    if (apptDate) {
-      const sel = new Date(apptDate + 'T00:00:00')
-      if (sel.getDay() !== targetDayNum) setApptDate('')
-    }
-  }, [day])
-
   const previewData = {
     supplier_name: supplier.trim() || null,
-    day,
+    day: apptDate ? dayNameFor(apptDate) : null,
     appointment_date: apptDate || null,
     contact_person: contact.trim() || null,
     signature_data: signatureData,
@@ -59,16 +61,12 @@ export default function RequestForm() {
       setMessage({ error: true, text: 'Please provide a signature before submitting.' })
       return
     }
-    if (new Date(apptDate + 'T00:00:00').getDay() !== targetDayNum) {
-      setMessage({ error: true, text: `The appointment date must fall on a ${day}. Please pick a valid date.` })
-      return
-    }
 
     setSubmitting(true)
     const { data: newId, error } = await supabase.rpc('submit_request', {
       p_supplier_name: supplier.trim(),
       p_appointment_date: apptDate,
-      p_day: day,
+      p_day: dayNameFor(apptDate),
       p_contact_person: contact.trim(),
       p_signature_data: signatureData,
     })
@@ -92,7 +90,6 @@ export default function RequestForm() {
     setSupplier('')
     setContact('')
     setApptDate('')
-    setDay('Monday')
     setSignatureData(null)
   }
 
@@ -133,36 +130,27 @@ export default function RequestForm() {
 
           <div className="mb-4">
             <label className="block text-xs font-semibold mb-1.5">Appointment Date</label>
-            <div className="flex gap-2.5">
-              {['Monday', 'Tuesday'].map((d) => (
-                <label
-                  key={d}
-                  className={`flex-1 text-center py-2.5 border rounded-lg cursor-pointer font-semibold text-sm select-none transition-colors ${
-                    day === d
-                      ? 'bg-brand text-white border-brand'
-                      : 'border-gray-300 hover:bg-gray-50'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="day"
-                    value={d}
-                    checked={day === d}
-                    onChange={() => setDay(d)}
-                    className="hidden"
-                  />
-                  {d}
-                </label>
-              ))}
+            <p className="text-xs text-gray-500 mb-2">Visits are only available on Mondays and Tuesdays.</p>
+            <div className="grid grid-cols-2 gap-2">
+              {upcomingDates.map((d) => {
+                const iso = toISO(d)
+                const selected = apptDate === iso
+                return (
+                  <button
+                    key={iso}
+                    type="button"
+                    onClick={() => setApptDate(iso)}
+                    className={`py-2.5 border rounded-lg font-semibold text-sm transition-colors ${
+                      selected
+                        ? 'bg-brand text-white border-brand'
+                        : 'border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {WEEKDAY_SHORT[d.getDay()]}, {d.getDate()} {MONTH_SHORT[d.getMonth()]}
+                  </button>
+                )
+              })}
             </div>
-            <input
-              type="date"
-              className="input-field mt-2.5"
-              value={apptDate}
-              onChange={(e) => setApptDate(e.target.value)}
-              min={getMinDate()}
-              step="7"
-            />
           </div>
 
           <div className="mb-4">
