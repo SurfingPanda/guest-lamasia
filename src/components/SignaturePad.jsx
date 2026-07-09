@@ -1,7 +1,7 @@
 import { useRef, useEffect, useCallback, useState } from 'react'
 import { getTrimmedSignature } from '../lib/utils'
 
-export default function SignaturePad({ onSignatureChange, label = 'Signature' }) {
+export default function SignaturePad({ onSignatureChange, label = 'Signature', error }) {
   const canvasRef = useRef(null)
   const ctxRef = useRef(null)
   const drawingRef = useRef(false)
@@ -103,7 +103,9 @@ export default function SignaturePad({ onSignatureChange, label = 'Signature' })
       <div className="relative">
         <canvas
           ref={canvasRef}
-          className="w-full h-[170px] border border-dashed border-gray-300 rounded-lg bg-gray-50 cursor-crosshair block touch-none"
+          className={`w-full h-[170px] border rounded-lg bg-gray-50 cursor-crosshair block touch-none ${
+            error ? 'border-red-400' : 'border-dashed border-gray-300'
+          }`}
           onMouseDown={handleStart}
           onMouseMove={handleMove}
           onTouchStart={handleStart}
@@ -123,6 +125,7 @@ export default function SignaturePad({ onSignatureChange, label = 'Signature' })
       >
         Clear signature
       </button>
+      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>
   )
 }

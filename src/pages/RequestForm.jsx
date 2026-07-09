@@ -34,6 +34,7 @@ export default function RequestForm() {
   const [signatureData, setSignatureData] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState(null)
+  const [fieldErrors, setFieldErrors] = useState({})
   const [copied, setCopied] = useState(false)
 
   const upcomingDates = useMemo(() => getUpcomingDates(8), [])
@@ -53,15 +54,19 @@ export default function RequestForm() {
   }
 
   const handleSubmit = async () => {
-    if (!supplier.trim() || !contact.trim() || !apptDate) {
-      setMessage({ error: true, text: 'Please fill in all fields (Supplier, Date, Contact Person).' })
-      return
-    }
-    if (!signatureData) {
-      setMessage({ error: true, text: 'Please provide a signature before submitting.' })
+    const errors = {}
+    if (!supplier.trim()) errors.supplier = 'Supplier name is required.'
+    if (!apptDate) errors.apptDate = 'Please select an appointment date.'
+    if (!contact.trim()) errors.contact = 'Contact person is required.'
+    if (!signatureData) errors.signature = 'Please provide a signature.'
+
+    setFieldErrors(errors)
+    if (Object.keys(errors).length > 0) {
+      setMessage(null)
       return
     }
 
+    setMessage(null)
     setSubmitting(true)
     const { data: newId, error } = await supabase.rpc('submit_request', {
       p_supplier_name: supplier.trim(),
@@ -91,6 +96,16 @@ export default function RequestForm() {
     setContact('')
     setApptDate('')
     setSignatureData(null)
+    setFieldErrors({})
+  }
+
+  const clearFieldError = (field) => {
+    setFieldErrors((prev) => {
+      if (!prev[field]) return prev
+      const next = { ...prev }
+      delete next[field]
+      return next
+    })
   }
 
   return (
@@ -121,11 +136,12 @@ export default function RequestForm() {
             <label className="block text-xs font-semibold mb-1.5">Supplier Name</label>
             <input
               type="text"
-              className="input-field"
+              className={`input-field ${fieldErrors.supplier ? 'border-red-400' : ''}`}
               placeholder="e.g. Acme Supplies Ltd."
               value={supplier}
-              onChange={(e) => setSupplier(e.target.value)}
+              onChange={(e) => { setSupplier(e.target.value); clearFieldError('supplier') }}
             />
+            {fieldErrors.supplier && <p className="mt-1 text-xs text-red-600">{fieldErrors.supplier}</p>}
           </div>
 
           <div className="mb-4">
@@ -139,11 +155,13 @@ export default function RequestForm() {
                   <button
                     key={iso}
                     type="button"
-                    onClick={() => setApptDate(iso)}
+                    onClick={() => { setApptDate(iso); clearFieldError('apptDate') }}
                     className={`py-2.5 border rounded-lg font-semibold text-sm transition-colors ${
                       selected
                         ? 'bg-brand text-white border-brand'
-                        : 'border-gray-300 hover:bg-gray-50'
+                        : fieldErrors.apptDate
+                          ? 'border-red-400 hover:bg-gray-50'
+                          : 'border-gray-300 hover:bg-gray-50'
                     }`}
                   >
                     {WEEKDAY_SHORT[d.getDay()]}, {d.getDate()} {MONTH_SHORT[d.getMonth()]}
@@ -151,21 +169,26 @@ export default function RequestForm() {
                 )
               })}
             </div>
+            {fieldErrors.apptDate && <p className="mt-1 text-xs text-red-600">{fieldErrors.apptDate}</p>}
           </div>
 
           <div className="mb-4">
             <label className="block text-xs font-semibold mb-1.5">Contact Person</label>
             <input
               type="text"
-              className="input-field"
+              className={`input-field ${fieldErrors.contact ? 'border-red-400' : ''}`}
               placeholder="e.g. Jane Doe"
               value={contact}
-              onChange={(e) => setContact(e.target.value)}
+              onChange={(e) => { setContact(e.target.value); clearFieldError('contact') }}
             />
+            {fieldErrors.contact && <p className="mt-1 text-xs text-red-600">{fieldErrors.contact}</p>}
           </div>
 
           <div className="mb-4">
-            <SignaturePad onSignatureChange={setSignatureData} />
+            <SignaturePad
+              error={fieldErrors.signature}
+              onSignatureChange={(data) => { setSignatureData(data); if (data) clearFieldError('signature') }}
+            />
           </div>
 
           <button
