@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { formatDate, formatTimestamp, getTrimmedSignature } from '../lib/utils'
 import { downloadPng } from '../lib/downloadPng'
+import { exportRequestsCsv } from '../lib/exportCsv'
 import InvitationCard from '../components/InvitationCard'
 
 export default function Admin() {
@@ -174,6 +175,13 @@ function Dashboard({ session, onLogout }) {
                 onChange={(e) => setSearch(e.target.value)}
                 className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs flex-1 sm:w-56 sm:flex-none focus:outline-none focus:border-brand-light focus:ring-2 focus:ring-accent/20"
               />
+              <button
+                onClick={() => exportRequestsCsv(filtered, tab)}
+                disabled={loading || filtered.length === 0}
+                className="bg-gray-100 border border-gray-200 text-gray-500 px-3.5 py-1.5 rounded-lg text-xs cursor-pointer font-medium hover:bg-gray-200 hover:text-gray-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
+              >
+                Export CSV
+              </button>
               <button
                 onClick={loadRequests}
                 disabled={loading}
