@@ -77,14 +77,17 @@ function LoginView({ onLogin }) {
 /* ─── Dashboard ─── */
 function Dashboard({ session, onLogout }) {
   const [requests, setRequests] = useState([])
+  const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('pending')
   const [viewData, setViewData] = useState(null)
   const [approveId, setApproveId] = useState(null)
   const [search, setSearch] = useState('')
 
   const loadRequests = useCallback(async () => {
+    setLoading(true)
     const { data } = await supabase.from('requests').select('*').order('created_at', { ascending: false })
     setRequests(data || [])
+    setLoading(false)
   }, [])
 
   useEffect(() => { loadRequests() }, [loadRequests])
@@ -172,14 +175,17 @@ function Dashboard({ session, onLogout }) {
               />
               <button
                 onClick={loadRequests}
-                className="bg-gray-100 border border-gray-200 text-gray-500 px-3.5 py-1.5 rounded-lg text-xs cursor-pointer font-medium hover:bg-gray-200 hover:text-gray-700 transition-colors"
+                disabled={loading}
+                className="bg-gray-100 border border-gray-200 text-gray-500 px-3.5 py-1.5 rounded-lg text-xs cursor-pointer font-medium hover:bg-gray-200 hover:text-gray-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Refresh
+                {loading ? 'Refreshing…' : 'Refresh'}
               </button>
             </div>
           </div>
 
-          {filtered.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-16 text-gray-500 text-sm">Loading requests…</div>
+          ) : filtered.length === 0 ? (
             <div className="text-center py-16 text-gray-500 text-sm">
               <span className="text-4xl block mb-3 opacity-50">
                 {tab === 'pending' ? '📋' : tab === 'approved' ? '✅' : '❌'}
