@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import SignaturePad from '../components/SignaturePad'
@@ -6,6 +6,32 @@ import InvitationCard from '../components/InvitationCard'
 
 const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+const DRAFT_KEY = 'lamasia_guest_request_draft'
+
+function loadDraft() {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
+function saveDraft(draft) {
+  try {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
+  } catch {
+    // localStorage unavailable (private browsing, quota) - draft just won't persist
+  }
+}
+
+function clearDraft() {
+  try {
+    localStorage.removeItem(DRAFT_KEY)
+  } catch {
+    // ignore
+  }
+}
 
 function toISO(d) {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
@@ -28,16 +54,25 @@ function getUpcomingDates(count) {
 }
 
 export default function RequestForm() {
-  const [supplier, setSupplier] = useState('')
-  const [contact, setContact] = useState('')
-  const [apptDate, setApptDate] = useState('')
-  const [signatureData, setSignatureData] = useState(null)
+  const upcomingDates = useMemo(() => getUpcomingDates(8), [])
+  const draft = useMemo(loadDraft, [])
+
+  const [supplier, setSupplier] = useState(draft?.supplier || '')
+  const [contact, setContact] = useState(draft?.contact || '')
+  const [apptDate, setApptDate] = useState(() => {
+    if (!draft?.apptDate) return ''
+    // Drop a stale draft date that's no longer in the current valid range
+    return upcomingDates.some((d) => toISO(d) === draft.apptDate) ? draft.apptDate : ''
+  })
+  const [signatureData, setSignatureData] = useState(draft?.signatureData || null)
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState(null)
   const [fieldErrors, setFieldErrors] = useState({})
   const [copied, setCopied] = useState(false)
 
-  const upcomingDates = useMemo(() => getUpcomingDates(8), [])
+  useEffect(() => {
+    saveDraft({ supplier, contact, apptDate, signatureData })
+  }, [supplier, contact, apptDate, signatureData])
 
   const copyRef = useCallback((refId) => {
     navigator.clipboard.writeText(refId)
@@ -92,6 +127,7 @@ export default function RequestForm() {
     })
 
     // Reset form
+    clearDraft()
     setSupplier('')
     setContact('')
     setApptDate('')
@@ -187,6 +223,7 @@ export default function RequestForm() {
           <div className="mb-4">
             <SignaturePad
               error={fieldErrors.signature}
+              initialValue={draft?.signatureData}
               onSignatureChange={(data) => { setSignatureData(data); if (data) clearFieldError('signature') }}
             />
           </div>

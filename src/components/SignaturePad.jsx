@@ -1,7 +1,7 @@
 import { useRef, useEffect, useCallback, useState } from 'react'
 import { getTrimmedSignature } from '../lib/utils'
 
-export default function SignaturePad({ onSignatureChange, label = 'Signature', error }) {
+export default function SignaturePad({ onSignatureChange, label = 'Signature', error, initialValue }) {
   const canvasRef = useRef(null)
   const ctxRef = useRef(null)
   const drawingRef = useRef(false)
@@ -35,6 +35,23 @@ export default function SignaturePad({ onSignatureChange, label = 'Signature', e
     window.addEventListener('resize', resize)
     return () => window.removeEventListener('resize', resize)
   }, [resize])
+
+  // Restore a previously-saved draft signature once, after the canvas is ready
+  useEffect(() => {
+    if (!initialValue) return
+    const canvas = canvasRef.current
+    const ctx = ctxRef.current
+    if (!canvas || !ctx) return
+    const rect = canvas.getBoundingClientRect()
+    const img = new Image()
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, rect.width, rect.height)
+      hasInkRef.current = true
+      setHasInk(true)
+    }
+    img.src = initialValue
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const getPos = (e) => {
     const rect = canvasRef.current.getBoundingClientRect()
