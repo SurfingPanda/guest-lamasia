@@ -55,6 +55,14 @@ export default function RequestForm() {
       setMessage({ error: true, text: 'Please fill in all fields (Supplier, Date, Contact Person).' })
       return
     }
+    if (!signatureData) {
+      setMessage({ error: true, text: 'Please provide a signature before submitting.' })
+      return
+    }
+    if (new Date(apptDate + 'T00:00:00').getDay() !== targetDayNum) {
+      setMessage({ error: true, text: `The appointment date must fall on a ${day}. Please pick a valid date.` })
+      return
+    }
 
     setSubmitting(true)
     const { data: newId, error } = await supabase.rpc('submit_request', {
